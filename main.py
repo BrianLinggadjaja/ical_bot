@@ -62,7 +62,7 @@ class MyClient(discord.Client):
                     
                             hasNotified=False
 
-            await asyncio.sleep(5)
+            await asyncio.sleep(60)
 
     def convert_12_to_24_hour(self, timeArray):
         hour = int(timeArray[0])
