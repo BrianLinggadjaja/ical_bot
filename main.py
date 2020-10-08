@@ -8,13 +8,14 @@ from datetime import datetime
 class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.bg_task = self.loop.create_task(self.print_todays_birthdays())
+        self.bg_task = self.loop.create_task(self.toggle_notify_access())
 
-    async def on_message(self, message):
-        if message.author == self.user:
-            return
-            
-        if message.content == '!ping':
+    async def toggle_notify_access(self):
+        await self.wait_until_ready()
+
+        hasNotified=False
+        # todo: refactor this multiple methods
+        while not self.is_closed():
             currentDateTime=datetime.now()
             currentDay=currentDateTime.strftime('%A').lower()
             postDay=os.environ['POST_DAY'].lower()
@@ -30,19 +31,38 @@ class MyClient(discord.Client):
                 endFormattedHour=endHour.split(' ')
                 endFormatted24Hour=self.convert_12_to_24_hour(endFormattedHour)
 
-                if (currentFormatted24Hour >= startFormatted24Hour) and (currentFormatted24Hour <= endFormatted24Hour):
-                    currentFormattedHour=''.join(currentFormattedHour)
-                    startFormattedHour=''.join(startFormattedHour)
-                    endFormattedHour=''.join(endFormattedHour)
-
+                if (currentFormatted24Hour >= startFormatted24Hour) and (currentFormatted24Hour <= endFormatted24Hour) and not hasNotified:
                     for guild in self.guilds:
                         for channel in guild.channels:
-                            await message.channel.send(channel)
-                            
-                        return
+                            notifyChannel=os.environ['NOTIFY_CHANNEL']
+                            targetChannel=os.environ['TARGET_CHANNEL']
 
-                    # await message.channel.send('> **Only Cams Access** has started! \n > Join the video call *NOW* from **' + startFormattedHour + '** to **' + endFormattedHour + '**')
-                    # return
+                            if str(channel) == targetChannel:
+                                userLimit=os.environ['MAX_CONNECTIONS']
+                                
+                                await channel.edit(user_limit=userLimit)
+                                await channel.set_permissions(guild.default_role, connect=True)
+                            elif str(channel) == notifyChannel:
+                                currentFormattedHour=''.join(currentFormattedHour)
+                                startFormattedHour=''.join(startFormattedHour)
+                                endFormattedHour=''.join(endFormattedHour)
+
+                                await channel.send('> **Only Cams Access** has started! \n > Join the video call *NOW* from **' + startFormattedHour + '** to **' + endFormattedHour + '**')
+                            
+                            hasNotified=True
+
+                elif not (currentFormatted24Hour >= startFormatted24Hour) and not (currentFormatted24Hour <= endFormatted24Hour) and hasNotified:
+                    for guild in self.guilds:
+                        for channel in guild.channels:
+                            targetChannel=os.environ['TARGET_CHANNEL']
+
+                            if str(channel) == targetChannel:
+                                await channel.edit(user_limit=0)
+                                await channel.set_permissions(guild.default_role, connect=False)
+                    
+                            hasNotified=False
+
+            await asyncio.sleep(5)
 
     def convert_12_to_24_hour(self, timeArray):
         hour = int(timeArray[0])
@@ -51,28 +71,6 @@ class MyClient(discord.Client):
             hour += 12
 
         return hour
-
-    async def print_todays_birthdays(self):
-        await self.wait_until_ready()
-
-        while not self.is_closed():
-            currentDateTime=datetime.now()
-            currentDay=currentDateTime.strftime('%A').lower()
-            postDay=os.environ['POST_DAY'].lower()
-
-            if currentDay == postDay:
-                currentHour=currentDateTime.strftime('%-I %p')
-                startHour=os.environ['START_HOUR']
-                endHour=os.environ['END_HOUR']
-                await message.channel.send('Only Cams now Active')
-                return
-
-                for guild in self.guilds:
-                        for channel in guild.channels:
-                            if str(channel) == "🎁birthdays" or str(channel) == "general":
-                                await channel.send('test')
-
-            await asyncio.sleep(3600)
 
 client = MyClient()
 client.run(os.environ['ACCESS_TOKEN'])

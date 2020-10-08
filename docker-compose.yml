@@ -1,6 +1,6 @@
 version: '3'
 services:
-    ical:
+    notify_access:
         restart: always
         build:
             context: .
