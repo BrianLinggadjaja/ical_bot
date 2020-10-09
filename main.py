@@ -62,11 +62,15 @@ class MyClient(discord.Client):
 
     def convert_12_to_24_hour(self, timeArray):
         hour = int(timeArray[0])
-    
-        if timeArray[1].lower() == 'pm':
-            hour += 12
+        hourIndicator = timeArray[1].lower()
 
-        return hour
+        if (hour == 12) and (hourIndicator == 'pm'):
+            return hour
+        elif (hourIndicator == 'pm') or ((hour == 12) and (hourIndicator == 'am')):
+            hour += 12
+            return hour
+        else:
+            return hour
 
 client = MyClient()
 client.run(os.environ['ACCESS_TOKEN'])
