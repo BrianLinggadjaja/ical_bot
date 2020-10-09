@@ -31,38 +31,34 @@ class MyClient(discord.Client):
                 endFormattedHour=endHour.split(' ')
                 endFormatted24Hour=self.convert_12_to_24_hour(endFormattedHour)
 
-                if (currentFormatted24Hour >= startFormatted24Hour) and (currentFormatted24Hour <= endFormatted24Hour) and not hasNotified:
-                    for guild in self.guilds:
+                for guild in self.guilds:
                         for channel in guild.channels:
-                            notifyChannel=os.environ['NOTIFY_CHANNEL']
                             targetChannel=os.environ['TARGET_CHANNEL']
 
-                            if str(channel) == targetChannel:
-                                userLimit=os.environ['MAX_CONNECTIONS']
+                            if (currentFormatted24Hour >= startFormatted24Hour) and (currentFormatted24Hour <= endFormatted24Hour) and not hasNotified:
+                                notifyChannel=os.environ['NOTIFY_CHANNEL']
+
+                                if str(channel) == targetChannel:
+                                    userLimit=os.environ['MAX_CONNECTIONS']
+                                    
+                                    await channel.edit(user_limit=userLimit)
+                                    await channel.set_permissions(guild.default_role, connect=True)
+                                elif str(channel) == notifyChannel:
+                                    currentFormattedHour=''.join(currentFormattedHour)
+                                    startFormattedHour=''.join(startFormattedHour)
+                                    endFormattedHour=''.join(endFormattedHour)
+
+                                    await channel.send('> **Only Cams Access** has started! \n > Join the video call *NOW* from **' + startFormattedHour + '** to **' + endFormattedHour + '**')
                                 
-                                await channel.edit(user_limit=userLimit)
-                                await channel.set_permissions(guild.default_role, connect=True)
-                            elif str(channel) == notifyChannel:
-                                currentFormattedHour=''.join(currentFormattedHour)
-                                startFormattedHour=''.join(startFormattedHour)
-                                endFormattedHour=''.join(endFormattedHour)
+                                hasNotified=True
+                            else:
+                                if str(channel) == targetChannel:
+                                    await channel.edit(user_limit=0)
+                                    await channel.set_permissions(guild.default_role, connect=False)
+                        
+                                hasNotified=False
 
-                                await channel.send('> **Only Cams Access** has started! \n > Join the video call *NOW* from **' + startFormattedHour + '** to **' + endFormattedHour + '**')
-                            
-                            hasNotified=True
-
-                elif not (currentFormatted24Hour >= startFormatted24Hour) and not (currentFormatted24Hour <= endFormatted24Hour) and hasNotified:
-                    for guild in self.guilds:
-                        for channel in guild.channels:
-                            targetChannel=os.environ['TARGET_CHANNEL']
-
-                            if str(channel) == targetChannel:
-                                await channel.edit(user_limit=0)
-                                await channel.set_permissions(guild.default_role, connect=False)
-                    
-                            hasNotified=False
-
-            await asyncio.sleep(60)
+                await asyncio.sleep(60)
 
     def convert_12_to_24_hour(self, timeArray):
         hour = int(timeArray[0])
