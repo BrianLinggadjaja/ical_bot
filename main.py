@@ -51,6 +51,8 @@ class MyClient(discord.Client):
                                     await channel.send('> **Only Cams Access** has started! \n > Join the video call *NOW* from **' + startFormattedHour + '** to **' + endFormattedHour + '**')
                                 
                                 hasNotified=True
+                            elif not (currentFormatted24Hour >= startFormatted24Hour) and not (currentFormatted24Hour <= endFormatted24Hour):
+                                hasNotified=False
                             else:
                                 if str(channel) == targetChannel:
                                     await channel.edit(user_limit=0)
