@@ -13,7 +13,7 @@ class MyClient(discord.Client):
     async def toggle_notify_access(self):
         await self.wait_until_ready()
 
-        hasNotified=False
+        self.hasNotified=False
         # todo: refactor this multiple methods
         while not self.is_closed():
             currentDateTime=datetime.now()
@@ -32,7 +32,7 @@ class MyClient(discord.Client):
                 endFormatted24Hour=self.convert_12_to_24_hour(endFormattedHour)
                 sleepTime=os.environ['SLEEP_TIME']
 
-                if (currentFormatted24Hour >= startFormatted24Hour) and (currentFormatted24Hour <= endFormatted24Hour) and not hasNotified:
+                if (currentFormatted24Hour >= startFormatted24Hour) and (currentFormatted24Hour <= endFormatted24Hour) and not self.hasNotified:
                     for guild in self.guilds:
                         for channel in guild.channels:
                             targetChannel=os.environ['TARGET_CHANNEL']
@@ -48,20 +48,18 @@ class MyClient(discord.Client):
                                 startFormattedHour=''.join(startFormattedHour)
                                 endFormattedHour=''.join(endFormattedHour)
 
+                                self.hasNotified=True
                                 await channel.send('> **Only Cams Access** has started! \n > Join the video call *NOW* from **' + startFormattedHour + '** to **' + endFormattedHour + '**')
-                    
-                    hasNotified=True
-
                 else:
-                    for guild in self.guilds:
-                        for channel in guild.channels:
-                            targetChannel=os.environ['TARGET_CHANNEL']
+                    if (self.hasNotified):
+                        for guild in self.guilds:
+                            for channel in guild.channels:
+                                targetChannel=os.environ['TARGET_CHANNEL']
 
-                            if str(channel) == targetChannel:
-                                await channel.edit(user_limit=0)
-                                await channel.set_permissions(guild.default_role, connect=False)
-
-                    hasNotified=False
+                                if str(channel) == targetChannel:
+                                    self.hasNotified=False
+                                    await channel.edit(user_limit=0)
+                                    await channel.set_permissions(guild.default_role, connect=False)
 
                 await asyncio.sleep(sleepTime)
 
